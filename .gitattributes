@@ -1,0 +1,8 @@
+# Automatically handle text files with LF normalization
+* text=auto
+
+# Exclude specific files and directories from the ZIP
+assets/css/build.css export-ignore
+tailwindcss export-ignore
+.github export-ignore
+.gitignore export-ignore

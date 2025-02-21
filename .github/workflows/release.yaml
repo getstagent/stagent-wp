@@ -1,0 +1,26 @@
+name: Build and Release Stagent for WordPress
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Rename readme.md to readme.txt
+        run: mv README.md readme.txt
+
+      - name: Prepare Stagent ZIP
+        run: zip -r stagent.zip . -x '.git*' -x '.github*' -x '.gitignore' -x '.gitattributes' -x 'tailwindcss' -x 'assets/css/build.css' -x '.*'
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: stagent.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
