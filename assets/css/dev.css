@@ -6,15 +6,11 @@
     @apply my-8 text-lg dark:text-white;
 }
 
-.stagent-bookings-container .button:hover {
-    @apply underline;
-}
-
 .stagent-bookings-list {
     @apply divide-y divide-black/10 list-none p-0 m-0 dark:divide-white/30;
 }
 
-.stagent-booking-item {
+.stagent-booking-list-item {
     @apply flex flex-col space-y-2 sm:flex-row justify-between py-4 sm:items-center first:pt-0;
 }
 
@@ -60,5 +56,5 @@
 }
 
 .stagent-powered-by.button {
-    @apply text-xs no-underline;
+    @apply text-xs opacity-50;
 }

@@ -3,61 +3,76 @@
  * Plugin Name: Stagent
  * Plugin URI: https://stagent.com
  * Description: Displays bookings from Stagent API in WordPress.
- * Version: v0.1.0
+ * Version: v0.2.0
  * Author: StagentArtwin B.V.
  * Author URI: https://stagent.com
+ * License: GNU General Public License v2 or later
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: stagent
+ * Requires at least: 5.0
+ * Requires PHP: 5.6
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STAGENT_VERSION', 'v0.1.0');
+// Define constants
+define('STAGENT_VERSION', 'v0.2.0');
 define('STAGENT_API_URL', 'https://stagent.com/api/v2');
 define('STAGENT_DEVELOPMENT_MODE', false);
 
 define('STAGENT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('STAGENT_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Require the activation/deactivation classes
+// Autoload classes (optional improvement)
 require_once STAGENT_PLUGIN_DIR . 'includes/class-stagent-activator.php';
 require_once STAGENT_PLUGIN_DIR . 'includes/class-stagent-deactivator.php';
-
-// Register hooks for activation & deactivation
-register_activation_hook(__FILE__, array('Stagent_Activator', 'activate'));
-register_deactivation_hook(__FILE__, array('Stagent_Deactivator', 'deactivate'));
-
-// Enqueue front-end scripts and styles
-function stagent_enqueue_scripts() {
-    wp_enqueue_style(
-        'stagent-css',
-        STAGENT_PLUGIN_URL . 'assets/css/stagent.css',
-        array(),
-        STAGENT_VERSION
-    );
-
-    wp_register_script(
-        'stagent-js',
-        STAGENT_PLUGIN_URL . 'assets/js/stagent.js',
-        array(),
-        STAGENT_VERSION,
-        true
-    );
-
-    wp_localize_script('stagent-js', 'stagentData', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-    ));
-
-    wp_enqueue_script('stagent-js');
-}
-add_action('wp_enqueue_scripts', 'stagent_enqueue_scripts');
-
-// Require main plugin class
 require_once STAGENT_PLUGIN_DIR . 'includes/class-stagent-plugin.php';
 
-// Boot Stagent plugin
-function run_stagent_plugin() {
-    $plugin = new Stagent_Plugin();
-    $plugin->init();
+// Register activation and deactivation hooks
+register_activation_hook(__FILE__, ['Stagent_Activator', 'activate']);
+register_deactivation_hook(__FILE__, ['Stagent_Deactivator', 'deactivate']);
+
+// Enqueue front-end scripts and styles
+function stagent_enqueue_frontend_scripts() {
+    wp_enqueue_style('stagent-frontend', STAGENT_PLUGIN_URL . 'assets/css/stagent.css', [], STAGENT_VERSION);
+    wp_enqueue_script('stagent-frontend', STAGENT_PLUGIN_URL . 'assets/js/stagent.js', [], STAGENT_VERSION, true);
+
+    // Localize script with secure AJAX URL
+    wp_localize_script('stagent-frontend', 'stagentData', [
+        'ajaxUrl' => esc_url(admin_url('admin-ajax.php')),
+        'nonce'   => wp_create_nonce('stagent_frontend_nonce'),
+    ]);
 }
-run_stagent_plugin();
+add_action('wp_enqueue_scripts', 'stagent_enqueue_frontend_scripts', 10);
+
+// Enqueue admin scripts and styles
+function stagent_enqueue_admin_scripts($hook) {
+    // Only enqueue on plugin-specific pages for performance
+    if (!in_array($hook, ['settings_page_stagent-settings'], true)) {
+        return;
+    }
+
+    wp_enqueue_script('stagent-admin', STAGENT_PLUGIN_URL . 'assets/js/stagent-admin.js', [], STAGENT_VERSION, true);
+
+    // Localize script with secure AJAX URL and nonce
+    wp_localize_script('stagent-admin', 'stagentData', [
+        'ajaxUrl' => esc_url(admin_url('admin-ajax.php')),
+        'nonce'   => wp_create_nonce('stagent_admin_nonce'),
+    ]);
+}
+add_action('admin_enqueue_scripts', 'stagent_enqueue_admin_scripts', 10, 1);
+
+// Boot the plugin
+function run_stagent_plugin() {
+    static $plugin_instance = null;
+
+    if (null === $plugin_instance) {
+        $plugin_instance = new Stagent_Plugin();
+        $plugin_instance->init();
+    }
+
+    return $plugin_instance; // Singleton pattern
+}
+add_action('plugins_loaded', 'run_stagent_plugin', 10);
