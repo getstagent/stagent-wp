@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const pastList = document.querySelector('.stagent-bookings-past');
     const loadMoreBtn = document.querySelector('.stagent-load-more');
 
+    if (!btnPastTab || !btnUpcomingTab || !upcomingList || !pastList || !loadMoreBtn) {
+        return;
+    }
+
     let activeTab = 'upcoming';
     let hasMoreUpcoming = true;
     let hasMorePast = true;
