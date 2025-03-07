@@ -1,179 +1,209 @@
 <?php
+/**
+ * Manages shortcodes for the Stagent plugin.
+ *
+ * @package Stagent
+ */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// Manages the [stagent_bookings] shortcode
+/**
+ * Stagent_Shortcodes class
+ *
+ * Handles the [stagent_bookings] shortcode and related AJAX functionality.
+ */
 class Stagent_Shortcodes {
 
+    /**
+     * Instance of Stagent_API.
+     *
+     * @var Stagent_API
+     */
     private $api;
 
+    /**
+     * Constructor.
+     *
+     * @param Stagent_API $api_instance The API instance.
+     */
     public function __construct($api_instance) {
         $this->api = $api_instance;
     }
 
+    /**
+     * Initialize shortcode and AJAX hooks.
+     */
     public function init() {
         add_shortcode('stagent_bookings', [$this, 'display_bookings']);
-
         add_action('wp_ajax_stagent_load_more', [$this, 'ajax_load_more']);
         add_action('wp_ajax_nopriv_stagent_load_more', [$this, 'ajax_load_more']);
     }
 
-    // The shortcode
+    /**
+     * Render the [stagent_bookings] shortcode.
+     *
+     * @param array $atts Shortcode attributes.
+     * @return string HTML output for the bookings.
+     */
     public function display_bookings($atts) {
-        $default_team_id = get_option('stagent_default_team_id');
+        $default_team_id = get_option('stagent_default_team_id', '');
         $show_past = get_option('stagent_show_past', true);
 
-        // Shortcode attributes
         $atts = shortcode_atts([
             'team'     => $default_team_id,
             'artists'  => '',
             'canceled' => '',
-            'per_page' => 5,
             'show'     => 'all',
-        ], $atts);
+            'show_past' => '',
+            'dark_mode' => '',
+            'per_page' => 5,
 
-        if (empty($atts['team'])) {
-            return 'Provide a team ID or set a default team in Stagent settings.';
+        ], $atts, 'stagent_bookings');
+
+        $team = sanitize_text_field($atts['team']);
+        if (empty($team)) {
+            return '<p>' . esc_html__('Provide a team ID or set a default team in Stagent settings.', 'stagent') . '</p>';
         }
 
-        // Parse the artists (as array)
-        $artists  = (!empty($atts['artists'])) ? explode(',', $atts['artists']) : [];
-        $per_page = max(1, (int) $atts['per_page']);
+        $artists = !empty($atts['artists']) ? array_map('sanitize_text_field', explode(',', $atts['artists'])) : [];
+        $per_page = max(1, filter_var($atts['per_page'], FILTER_VALIDATE_INT, ['options' => ['default' => 5]]));
+        $show = in_array($atts['show'], ['all', 'past', 'upcoming'], true) ? $atts['show'] : 'all';
+        $canceled = $atts['canceled'] === '' ? (bool) get_option('stagent_show_canceled', false) : filter_var($atts['canceled'], FILTER_VALIDATE_BOOLEAN);
+        $show_past = $atts['show_past'] === '' ? (bool) get_option('stagent_show_past', true) : filter_var($atts['show_past'], FILTER_VALIDATE_BOOLEAN);
+        $dark_mode = $atts['dark_mode'] === '' ? (bool) get_option('stagent_dark_mode', false) : filter_var($atts['dark_mode'], FILTER_VALIDATE_BOOLEAN);
 
-        // Determine whether to hide the artist name
         $hide_artist = false;
-        // If there's only one artist passed via the shortcode, hide the artist
         if (count($artists) === 1) {
             $hide_artist = true;
         } else {
-            // Otherwise, check the team type from cached teams
             $cached = get_option('stagent_cached_teams', '');
             if (!empty($cached)) {
                 $teams = json_decode($cached, true);
-                foreach ($teams as $team_info) {
-                    if ($team_info['id'] == $atts['team'] && isset($team_info['type']) && $team_info['type'] === 'artist') {
-                        $hide_artist = true;
-                        break;
+                if (is_array($teams)) {
+                    foreach ($teams as $team_info) {
+                        if ($team_info['id'] === $team && isset($team_info['type']) && $team_info['type'] === 'artist') {
+                            $hide_artist = true;
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        // Set default show mode
-        $show = in_array($atts['show'], ['all', 'past', 'upcoming']) ? $atts['show'] : 'all';
+        $upcoming = $show !== 'past' ? $this->get_cached_bookings($team, $artists, $canceled, 'upcoming', 1, $per_page) : [];
+        $past = $show_past && $show !== 'upcoming' ? $this->get_cached_bookings($team, $artists, $canceled, 'past', 1, $per_page) : [];
 
-        // Get canceled bookings, or not
-        $canceled = ($atts['canceled'] === '')
-            ? (bool) get_option('stagent_show_canceled')
-            : filter_var($atts['canceled'], FILTER_VALIDATE_BOOLEAN);
-
-        // Get upcoming bookings
-        $upcoming = ($show !== 'past')
-            ? $this->get_cached_bookings($atts['team'], $artists, $canceled, 'upcoming', 1, $per_page)
-            : [];
-
-        // Get past bookings
-        $past = ($show_past && $show !== 'upcoming')
-            ? $this->get_cached_bookings($atts['team'], $artists, $canceled, 'past', 1, $per_page)
-            : [];
-
-        // If there's an error, show it
         if (isset($upcoming['error'])) {
-            return '<p>Error fetching upcoming bookings: ' . esc_html($upcoming['error']) . '</p>';
+            return '<p>' . esc_html__('Error fetching upcoming bookings: ', 'stagent') . esc_html($upcoming['error']) . '</p>';
         }
         if (isset($past['error'])) {
-            return '<p>Error fetching past bookings: ' . esc_html($past['error']) . '</p>';
+            return '<p>' . esc_html__('Error fetching past bookings: ', 'stagent') . esc_html($past['error']) . '</p>';
         }
 
-        // Pass all needed data to the container template
-        $html = Stagent_Template::render('stagent-bookings-container.php', [
+        return Stagent_Template::render('stagent-bookings-container.php', [
             'show'        => $show,
             'upcoming'    => $upcoming,
             'past'        => $past,
-            'team'        => $atts['team'],
+            'team'        => $team,
             'artists'     => $artists,
             'hide_artist' => $hide_artist,
+            'dark_mode'   => $dark_mode,
+            'show_past'   => $show_past,
             'per_page'    => $per_page,
         ], true);
-
-        return $html;
     }
 
-    // Fetch bookings with transient cache layer
+    /**
+     * Fetch bookings with transient caching.
+     *
+     * @param string $team     Team ID.
+     * @param array  $artists  Array of artist IDs.
+     * @param bool   $canceled Include canceled bookings.
+     * @param string $show     Show type (upcoming, past, all).
+     * @param int    $page     Page number.
+     * @param int    $per_page Items per page.
+     * @return array Bookings data.
+     */
     private function get_cached_bookings($team, $artists, $canceled, $show, $page, $per_page) {
-        // If caching is disabled, always fetch from API
-        if ( defined('STAGENT_DEVELOPMENT_MODE') && STAGENT_DEVELOPMENT_MODE === true ) {
+        if (STAGENT_DEVELOPMENT_MODE) {
             return $this->api->fetch_bookings($team, $artists, $canceled, $show, $page, $per_page);
         }
 
-        // Create a unique cache key
         $cache_key = 'stagent_' . md5(implode('|', [
                 $team,
                 implode(',', $artists),
-                $canceled,
+                $canceled ? '1' : '0',
                 $show,
                 $page,
                 $per_page
             ]));
 
-        // Try retrieving from cache
         $cached = get_transient($cache_key);
         if ($cached !== false) {
             return $cached;
         }
 
-        // Not cached, fetch from API
         $bookings = $this->api->fetch_bookings($team, $artists, $canceled, $show, $page, $per_page);
 
-        // Store in transient if no error
         if (!isset($bookings['error'])) {
-            // Cache for 15 minutes
             set_transient($cache_key, $bookings, 15 * MINUTE_IN_SECONDS);
         }
 
         return $bookings;
     }
 
-    // Callback for load more
+    /**
+     * Handle AJAX load more request for bookings.
+     */
     public function ajax_load_more() {
-        // If using a nonce, check it here
-        $team     = isset($_POST['team']) ? sanitize_text_field($_POST['team']) : '';
-        $show     = isset($_POST['show']) ? sanitize_text_field($_POST['show']) : 'upcoming';
-        $page     = isset($_POST['page']) ? intval($_POST['page']) : 2;
-        $per_page = isset($_POST['per_page']) ? intval($_POST['per_page']) : 10;
-        $artists  = [];
-        $canceled = isset($_POST['canceled']) ? filter_var($_POST['canceled'], FILTER_VALIDATE_BOOLEAN) : false;
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'stagent_frontend_nonce')) {
+            wp_send_json_error(esc_html__('Security check failed.', 'stagent'));
+            wp_die();
+        }
+
+        $team = isset($_POST['team']) ? sanitize_text_field(wp_unslash($_POST['team'])) : '';
+        $show = isset($_POST['show']) ? sanitize_text_field(wp_unslash($_POST['show'])) : 'upcoming';
+        $page = isset($_POST['page']) ? filter_var(wp_unslash($_POST['page']), FILTER_VALIDATE_INT, ['options' => ['default' => 2]]) : 2;
+        $per_page = isset($_POST['per_page']) ? filter_var(wp_unslash($_POST['per_page']), FILTER_VALIDATE_INT, ['options' => ['default' => 10]]) : 10;
+        $canceled = isset($_POST['canceled']) ? filter_var(wp_unslash($_POST['canceled']), FILTER_VALIDATE_BOOLEAN) : false;
+        $artists = [];
 
         if (!empty($_POST['artists'])) {
-            $artists = array_map('sanitize_text_field', explode(',', $_POST['artists']));
+            $artists = array_map('sanitize_text_field', explode(',', sanitize_text_field(wp_unslash($_POST['artists']))));
         }
 
         if (empty($team)) {
-            wp_send_json_error('No team provided.');
+            wp_send_json_error(esc_html__('No team provided.', 'stagent'));
+            wp_die();
         }
 
-        // Fetch next page with caching
+        $show = in_array($show, ['upcoming', 'past', 'all'], true) ? $show : 'upcoming';
+        $page = max(1, $page);
+        $per_page = max(1, $per_page);
+
         $bookings = $this->get_cached_bookings($team, $artists, $canceled, $show, $page, $per_page);
         if (isset($bookings['error'])) {
-            wp_send_json_error($bookings['error']);
+            wp_send_json_error(esc_html($bookings['error']));
+            wp_die();
         }
 
-        // Build HTML for the new booking items
         $html = '';
-        if (!empty($bookings['data'])) {
+        if (!empty($bookings['data']) && is_array($bookings['data'])) {
             foreach ($bookings['data'] as $booking) {
-                $html .= Stagent_Template::render('stagent-booking-item.php', [
-                    'booking' => $booking,
+                $html .= Stagent_Template::render('stagent-booking-list-item.php', [
+                    'booking'  => $booking,
                     'canceled' => isset($booking['is_canceled']) ? $booking['is_canceled'] : false,
                 ], true);
             }
         }
 
         wp_send_json_success([
-            'html'  => $html,
-            'count' => !empty($bookings['data']) ? count($bookings['data']) : 0,
+            'html'     => $html,
+            'count'    => !empty($bookings['data']) ? count($bookings['data']) : 0,
+            'has_more' => !empty($bookings['data']) && count($bookings['data']) === $per_page,
         ]);
+        wp_die();
     }
 }

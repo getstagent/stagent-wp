@@ -6,6 +6,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadMoreBtn = document.querySelector('.stagent-load-more');
 
     let activeTab = 'upcoming';
+    let hasMoreUpcoming = true;
+    let hasMorePast = true;
+
+    function updateLoadMoreVisibility() {
+        if (activeTab === 'upcoming') {
+            loadMoreBtn.classList.toggle('hidden', !hasMoreUpcoming);
+            loadMoreBtn.classList.toggle('block', hasMoreUpcoming);
+        } else {
+            loadMoreBtn.classList.toggle('hidden', !hasMorePast);
+            loadMoreBtn.classList.toggle('block', hasMorePast);
+        }
+    }
 
     btnPastTab.addEventListener('click', function(e) {
         e.preventDefault();
@@ -14,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnPastTab.classList.add('active');
         upcomingList.classList.add('hidden');
         pastList.classList.remove('hidden');
+        updateLoadMoreVisibility();
     });
 
     btnUpcomingTab.addEventListener('click', function(e) {
@@ -23,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnUpcomingTab.classList.add('active');
         pastList.classList.add('hidden');
         upcomingList.classList.remove('hidden');
+        updateLoadMoreVisibility();
     });
 
     loadMoreBtn.addEventListener('click', function(e) {
@@ -39,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('action', 'stagent_load_more');
+        formData.append('nonce', stagentData.nonce);
         formData.append('team', team);
         formData.append('artists', artists);
         formData.append('per_page', perPage);
@@ -52,31 +67,31 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (!data.success) {
-                    alert('Error: ' + data.data);
+                    alert('Error: ' + (data.data || 'Unknown error occurred'));
                     return;
                 }
 
-                const newItemsHtml = data.data.html;
+                const newItemsHtml = data.data.html || '';
                 const itemCount = data.data.count || 0;
+                const hasMore = data.data.has_more || false;
 
                 if (activeTab === 'upcoming') {
                     upcomingList.insertAdjacentHTML('beforeend', newItemsHtml);
                     loadMoreBtn.dataset.upcomingPage = page + 1;
+                    hasMoreUpcoming = hasMore;
                 } else {
                     pastList.insertAdjacentHTML('beforeend', newItemsHtml);
                     loadMoreBtn.dataset.pastPage = page + 1;
+                    hasMorePast = hasMore;
                 }
 
-                if (itemCount < perPage) {
-                    loadMoreBtn.classList.add('hidden');
-                    loadMoreBtn.classList.remove('block');
-                } else {
-                    loadMoreBtn.classList.add('block');
-                    loadMoreBtn.classList.remove('hidden');
-                }
+                updateLoadMoreVisibility();
             })
             .catch(err => {
                 console.error('AJAX Error:', err);
+                alert('Failed to load more bookings.');
             });
     });
+
+    updateLoadMoreVisibility();
 });
