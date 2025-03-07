@@ -130,25 +130,25 @@ class Stagent_Settings {
      * @return string The validated script or previous value if invalid.
      */
     public function validate_booking_widget($input) {
-        $input = trim($input); // Remove leading/trailing whitespace
+        $input = trim($input);
         if (empty($input)) {
-            return ''; // Allow empty input to clear the field
+            return '';
         }
 
-        // Flexible regex: allows optional attributes and whitespace
-        $pattern = '/^<script\s+(?:[^>]*?\s+)?src=["\']https:\/\/stagent\.(com|test)\/widget\/widget\.js\?signature=[^"\']+["\'](?:\s+[^>]*)?(?:\s+defer)?\s*><\/script>$/i';
+        // Determine if widget url is correct.
+        $pattern = '/(https:\/\/stagent\.(?:com|test)\/widget\/widget\.js\?signature=[^"\'>\s]+)/i';
 
-        if (!preg_match($pattern, $input)) {
-            add_settings_error(
-                'stagent_booking_widget',
-                'invalid_widget_script',
-                esc_html__('The booking request widget script is invalid. Please paste the exact <script> tag from Stagent.', 'stagent'),
-                'error'
-            );
-            return get_option('stagent_booking_widget', ''); // Return previous value if invalid
+        if (preg_match($pattern, $input, $matches)) {
+            return esc_url_raw($matches[1]);
         }
 
-        return $input;
+        add_settings_error(
+            'stagent_booking_widget',
+            'invalid_widget_script',
+            esc_html__('The booking request widget script is invalid. Please paste the exact <script> tag from Stagent.', 'stagent'),
+            'error'
+        );
+        return get_option('stagent_booking_widget', '');
     }
 
     /**

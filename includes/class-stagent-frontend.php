@@ -20,7 +20,7 @@ class Stagent_Frontend {
      * Initialize front-end hooks.
      */
     public function init() { // Changed to non-static for consistency
-        add_action('wp_footer', [$this, 'output_booking_widget'], 20);
+        add_action('wp_footer', [$this, 'output_booking_widget']);
     }
 
     /**
@@ -39,13 +39,15 @@ class Stagent_Frontend {
             return;
         }
 
-        $allowed_tags = [
-            'script' => [
-                'src'    => true,
-                'defer'  => true,
-            ],
-        ];
+        wp_register_script('stagent-booking-widget', $widget, [], STAGENT_VERSION, true);
 
-        echo wp_kses($widget, $allowed_tags); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped via wp_kses
+        add_filter('script_loader_tag', function($tag, $handle) {
+            if ('stagent-booking-widget' === $handle && false === strpos($tag, 'defer')) {
+                $tag = str_replace(' src', ' defer src', $tag);
+            }
+            return $tag;
+        }, 10, 2);
+
+        wp_enqueue_script('stagent-booking-widget');
     }
 }
