@@ -115,6 +115,13 @@ define('STAGENT_DEVELOPMENT_MODE', true);
 Enable dark mode via the dark_mode="true" shortcode attribute or in Settings > Stagent to apply a dark theme to the bookings list display.
 
 == Changelog ==
+= v0.2.2 =
+- **Improved**: Store widget script as URL and enqueue it.
+- **Fixed**: Add element existence checks in JS.
+
+= v0.2.1 =
+- **Improved**: Applied feedback from WordPress.org for Plugin Directory listing.
+
 = v0.2.0 =
 - **Added**: New shortcode attributes `show_past="true|false"` to control visibility of "Past" and "Upcoming" toggle buttons (defaults to `true` if past bookings are enabled in settings).
 - **Added**: New shortcode attribute `dark_mode="true|false"` to enable/disable dark mode per shortcode instance (overrides settings, defaults to `false`).
