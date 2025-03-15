@@ -117,7 +117,7 @@ Enable dark mode via the dark_mode="true" shortcode attribute or in Settings > S
 == Changelog ==
 = v0.2.4 =
 - **Added**: Option to enable/disable 'Powered by Stagent'.
-- - **Improved**: Optimized and minified CSS.
+- **Improved**: Optimized and minified CSS.
 
 = v0.2.3 =
 - **Fixed**: Corrected minimum required versions.
