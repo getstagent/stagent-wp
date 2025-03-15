@@ -22,6 +22,7 @@ $upcoming = is_array($upcoming ?? []) ? $upcoming : [];
 $past = is_array($past ?? []) ? $past : [];
 $show_past_enabled = (bool) ($show_past ?? true);
 $dark_mode_enabled = (bool) ($dark_mode ?? false);
+$show_powered_by = (bool) get_option('stagent_powered_by', false);
 ?>
 
 <div class="stagent-bookings-container <?php echo $dark_mode_enabled ? 'dark' : ''; ?>">
@@ -69,9 +70,11 @@ $dark_mode_enabled = (bool) ($dark_mode ?? false);
         </div>
 
         <div class="stagent-bookings-footer-end">
-            <a href="https://stagent.com" class="button stagent-powered-by" target="_blank" rel="noopener noreferrer">
-                <?php esc_html_e('Powered by Stagent', 'stagent'); ?>
-            </a>
+            <?php if ($show_powered_by) : ?>
+                <a href="https://stagent.com" class="button stagent-powered-by" target="_blank" rel="noopener noreferrer">
+                    <?php esc_html_e('Powered by Stagent', 'stagent'); ?>
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>

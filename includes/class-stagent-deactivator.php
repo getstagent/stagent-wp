@@ -29,6 +29,7 @@ class Stagent_Deactivator {
         'stagent_show_flag',
         'stagent_dark_mode',
         'stagent_enable_booking_widget',
+        'stagent_powered_by',
     ];
 
     /**

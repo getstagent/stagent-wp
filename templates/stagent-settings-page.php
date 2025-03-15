@@ -22,6 +22,7 @@ $dark_mode = (bool) ($dark_mode ?? false);
 $booking_widget = $booking_widget ?? '';
 $enable_booking_widget = (bool) ($enable_booking_widget ?? false);
 $teams = is_array($teams ?? []) ? $teams : [];
+$powered_by = (bool) ($powered_by ?? false);
 ?>
 
 <div class="wrap">
@@ -112,6 +113,13 @@ $teams = is_array($teams ?? []) ? $teams : [];
                                    id="stagent_dark_mode"
                                 <?php checked($dark_mode, 1); ?> />
                             <?php esc_html_e('Enable dark mode', 'stagent'); ?>
+                        </label>
+                        <br>
+                        <label for="stagent_powered_by">
+                            <input type="checkbox" name="stagent_powered_by" value="1"
+                                   id="stagent_powered_by"
+                                <?php checked($powered_by, 1); ?> />
+                            <?php esc_html_e('Display \'Powered by Stagent\'', 'stagent'); ?>
                         </label>
                     </fieldset>
                 </td>

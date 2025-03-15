@@ -94,6 +94,11 @@ class Stagent_Settings {
             'sanitize_callback' => [$this, 'sanitize_json'],
             'default' => '',
         ]);
+        register_setting('stagent_settings_group', 'stagent_powered_by', [ // phpcs:ignore PluginCheck.CodeAnalysis.SettingSanitization.register_settingDynamic -- Sanitized via sanitize_boolean
+            'type' => 'boolean',
+            'sanitize_callback' => [$this, 'sanitize_boolean'],
+            'default' => false,
+        ]);
     }
 
     /**
@@ -238,6 +243,7 @@ class Stagent_Settings {
         $dark_mode       = get_option('stagent_dark_mode', false);
         $booking_widget  = get_option('stagent_booking_widget', '');
         $enable_widget   = get_option('stagent_enable_booking_widget', false);
+        $powered_by      = get_option('stagent_powered_by', false);
 
         $cached_teams_json = get_option('stagent_cached_teams', '');
         $teams = $cached_teams_json ? json_decode($cached_teams_json, true) : [];
@@ -250,15 +256,16 @@ class Stagent_Settings {
         }
 
         Stagent_Template::render('stagent-settings-page.php', [
-            'api_key'              => $api_key,
-            'default_team_id'      => $default_team_id,
-            'show_past'            => $show_past,
-            'show_canceled'        => $show_canceled,
-            'show_flag'            => $show_flag,
-            'dark_mode'            => $dark_mode,
-            'teams'                => $teams,
-            'booking_widget'       => $booking_widget,
+            'api_key'               => $api_key,
+            'default_team_id'       => $default_team_id,
+            'show_past'             => $show_past,
+            'show_canceled'         => $show_canceled,
+            'show_flag'             => $show_flag,
+            'dark_mode'             => $dark_mode,
+            'teams'                 => $teams,
+            'booking_widget'        => $booking_widget,
             'enable_booking_widget' => $enable_widget,
+            'powered_by'            => $powered_by,
         ]);
     }
 
