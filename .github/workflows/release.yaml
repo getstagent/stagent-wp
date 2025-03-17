@@ -1,4 +1,4 @@
-name: Build and Release Stagent for WordPress
+name: Build plugin zip
 
 on:
   push:
