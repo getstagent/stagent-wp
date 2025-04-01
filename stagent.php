@@ -3,7 +3,7 @@
  * Plugin Name: Stagent
  * Plugin URI: https://stagent.com
  * Description: Displays bookings from Stagent API in WordPress.
- * Version: 0.2.4
+ * Version: 0.2.5
  * Author: StagentArtwin B.V.
  * License: GNU General Public License v2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define constants
-define('STAGENT_VERSION', '0.2.4');
+define('STAGENT_VERSION', '0.2.5');
 define('STAGENT_API_URL', 'https://stagent.com/api/v2');
 define('STAGENT_DEVELOPMENT_MODE', false);
 

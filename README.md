@@ -3,7 +3,7 @@ Contributors: stagent
 Tags: stagent, bookings, artists, events, djs
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 0.2.4
+Stable tag: 0.2.5
 Requires PHP: 7.0
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -115,6 +115,9 @@ define('STAGENT_DEVELOPMENT_MODE', true);
 Enable dark mode via the dark_mode="true" shortcode attribute or in Settings > Stagent to apply a dark theme to the bookings list display.
 
 == Changelog ==
+= v0.2.5 =
+- **Fixed**: Clashing CSS with some themes.
+- 
 = v0.2.4 =
 - **Added**: Option to enable/disable 'Powered by Stagent'.
 - **Improved**: Optimized and minified CSS.

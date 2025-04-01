@@ -112,6 +112,7 @@ class Stagent_Shortcodes {
             'dark_mode'   => $dark_mode,
             'show_past'   => $show_past,
             'per_page'    => $per_page,
+            'canceled'    => $canceled,
         ], true);
     }
 

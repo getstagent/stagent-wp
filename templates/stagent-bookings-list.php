@@ -13,15 +13,15 @@ if (!defined('ABSPATH')) {
 }
 
 // Sanitize and validate variables passed from stagent-booking-container.php
-$list_class = sanitize_html_class($list_class ?? '');
+$classes = sanitize_html_class($list_class ?? '');
 $visible = (bool) ($visible ?? false);
 $data = is_array($data ?? []) ? $data : [];
 $hide_artist = (bool) ($hide_artist ?? false);
 
-$classes = $list_class . ($visible ? '' : ' hidden');
+$style = $visible ? 'display: block;' : 'display: none;';
 ?>
 
-<ul class="stagent-bookings-list <?php echo esc_attr($classes); ?>">
+<ul class="stagent-bookings-list <?php echo esc_attr($classes); ?>" style="<?php echo esc_attr($style); ?>">
     <?php if (empty($data)) : ?>
         <li><?php esc_html_e('No bookings found.', 'stagent'); ?></li>
     <?php else : ?>

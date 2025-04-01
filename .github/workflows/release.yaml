@@ -16,7 +16,7 @@ jobs:
         run: mv README.md readme.txt
 
       - name: Prepare Stagent ZIP
-        run: zip -r stagent.zip . -x '.git*' -x '.github*' -x '.gitignore' -x '.gitattributes' -x 'tailwindcss' -x 'assets/css/dev.css' -x '.*'
+        run: zip -r stagent.zip . -x '.git*' -x '.github*' -x '.gitignore' -x '.gitattributes' -x 'tailwind.config.js' -x 'assets/css/dev.css' -x '.*'
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

@@ -5,9 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const pastList = document.querySelector('.stagent-bookings-past');
     const loadMoreBtn = document.querySelector('.stagent-load-more');
 
-    if (!btnPastTab || !btnUpcomingTab || !upcomingList || !pastList || !loadMoreBtn) {
+    if (!btnUpcomingTab || !upcomingList || !loadMoreBtn) {
         return;
     }
+
+    const pastTabExists = !!btnPastTab && !!pastList;
 
     let activeTab = 'upcoming';
     let hasMoreUpcoming = true;
@@ -15,41 +17,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateLoadMoreVisibility() {
         if (activeTab === 'upcoming') {
-            loadMoreBtn.classList.toggle('hidden', !hasMoreUpcoming);
-            loadMoreBtn.classList.toggle('block', hasMoreUpcoming);
+            loadMoreBtn.style.display = hasMoreUpcoming ? 'block' : 'none';
+        } else if (pastTabExists) {
+            loadMoreBtn.style.display = hasMorePast ? 'block' : 'none';
         } else {
-            loadMoreBtn.classList.toggle('hidden', !hasMorePast);
-            loadMoreBtn.classList.toggle('block', hasMorePast);
+            loadMoreBtn.style.display = 'none';
         }
     }
 
-    btnPastTab.addEventListener('click', function(e) {
-        e.preventDefault();
-        activeTab = 'past';
-        btnUpcomingTab.classList.remove('active');
-        btnPastTab.classList.add('active');
-        upcomingList.classList.add('hidden');
-        pastList.classList.remove('hidden');
-        updateLoadMoreVisibility();
-    });
+    if (pastTabExists) {
+        btnPastTab.addEventListener('click', function(e) {
+            e.preventDefault();
+            activeTab = 'past';
+            btnUpcomingTab.classList.remove('active');
+            btnPastTab.classList.add('active');
+            upcomingList.style.display = 'none';
+            pastList.style.display = '';
+            updateLoadMoreVisibility();
+        });
+    }
 
     btnUpcomingTab.addEventListener('click', function(e) {
         e.preventDefault();
         activeTab = 'upcoming';
-        btnPastTab.classList.remove('active');
+        if (pastTabExists) btnPastTab.classList.remove('active');
         btnUpcomingTab.classList.add('active');
-        pastList.classList.add('hidden');
-        upcomingList.classList.remove('hidden');
+        if (pastTabExists) pastList.style.display = 'none';
+        upcomingList.style.display = '';
         updateLoadMoreVisibility();
     });
 
     loadMoreBtn.addEventListener('click', function(e) {
         e.preventDefault();
 
-        let page = parseInt(loadMoreBtn.dataset.upcomingPage, 10);
+        let page;
         if (activeTab === 'past') {
-            page = parseInt(loadMoreBtn.dataset.pastPage, 10);
+            if (!pastTabExists) return;
+            page = parseInt(loadMoreBtn.dataset.pastPage || '1', 10);
+        } else {
+            page = parseInt(loadMoreBtn.dataset.upcomingPage || '1', 10);
         }
+
+        const nextPage = page + 1;
 
         const team = loadMoreBtn.dataset.team;
         const artists = loadMoreBtn.dataset.artists;
@@ -62,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('artists', artists);
         formData.append('per_page', perPage);
         formData.append('show', activeTab);
-        formData.append('page', page + 1);
+        formData.append('page', nextPage);
 
         fetch(stagentData.ajaxUrl, {
             method: 'POST',
@@ -76,16 +85,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const newItemsHtml = data.data.html || '';
-                const itemCount = data.data.count || 0;
                 const hasMore = data.data.has_more || false;
 
                 if (activeTab === 'upcoming') {
                     upcomingList.insertAdjacentHTML('beforeend', newItemsHtml);
-                    loadMoreBtn.dataset.upcomingPage = page + 1;
+                    loadMoreBtn.dataset.upcomingPage = nextPage;
                     hasMoreUpcoming = hasMore;
-                } else {
+                } else if (pastTabExists) {
                     pastList.insertAdjacentHTML('beforeend', newItemsHtml);
-                    loadMoreBtn.dataset.pastPage = page + 1;
+                    loadMoreBtn.dataset.pastPage = nextPage;
                     hasMorePast = hasMore;
                 }
 
@@ -98,4 +106,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     updateLoadMoreVisibility();
+
+    upcomingList.style.display = '';
+    if (pastTabExists) {
+        pastList.style.display = 'none';
+    }
+
+    const styleBlocks = document.querySelectorAll('style');
+    styleBlocks.forEach(block => {
+        if (block.textContent.includes('.stagent-bookings-past')) {
+            block.remove();
+        }
+    });
 });

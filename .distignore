@@ -1,9 +1,11 @@
 /.wordpress-org
 /.git
 /.github
-/tailwindcss
 /assets/css/dev.css
 
 .distignore
 .gitattributes
 .gitignore
+package.json
+package-lock.json
+tailwind.config.js

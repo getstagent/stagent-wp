@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "../../node_modules/tailwindcss/theme.css" layer(theme);
 
 @variant dark (&:where(.dark, .dark *));
 

@@ -33,6 +33,14 @@ $show_powered_by = (bool) get_option('stagent_powered_by', false);
         </div>
     <?php endif; ?>
 
+    <?php if ($show === 'all') : ?>
+        <style>
+            .stagent-bookings-past {
+                display: none !important;
+            }
+        </style>
+    <?php endif; ?>
+
     <?php if ($show !== 'past') : ?>
         <?php
         $upcoming_list = Stagent_Template::render('stagent-bookings-list.php', [
@@ -62,9 +70,9 @@ $show_powered_by = (bool) get_option('stagent_powered_by', false);
             <a href="javascript:void(0);" class="button stagent-load-more"
                data-upcoming-page="1"
                data-past-page="1"
-               data-team="<?php echo esc_attr($team); ?>"
-               data-artists="<?php echo esc_attr(implode(',', $artists)); ?>"
-               data-per-page="<?php echo esc_attr($per_page); ?>">
+                data-team="<?php echo esc_attr($team); ?>"
+                data-artists="<?php echo esc_attr(implode(',', $artists)); ?>"
+                data-per-page="<?php echo esc_attr($per_page); ?>">
                 <?php esc_html_e('Load more', 'stagent'); ?>
             </a>
         </div>
